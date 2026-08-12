@@ -10,6 +10,8 @@ export { Divider } from './Divider';
 export { IconButton } from './IconButton';
 export { ProgressBar, ProgressRing, StepDots } from './Progress';
 export { Screen } from './Screen';
+export { SocialButton } from './SocialButton';
+export type { SocialProvider } from './SocialButton';
 export { ScreenHeader } from './ScreenHeader';
 export { SectionHeader } from './SectionHeader';
 export { EmptyState, ErrorState, LoadingState, Skeleton } from './States';

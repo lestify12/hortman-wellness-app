@@ -10,10 +10,10 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import { colors, elevation, gradients, radius, scale, spacing, typeScale } from '@/theme';
+import { alpha, colors, elevation, gradients, radius, scale, spacing, typeScale } from '@/theme';
 import { Text } from './Typography';
 
-export type ButtonVariant = 'primary' | 'gold' | 'outline' | 'ghost' | 'onDark';
+export type ButtonVariant = 'primary' | 'gold' | 'outline' | 'ghost' | 'onDark' | 'marble';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface Props {
@@ -69,12 +69,17 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         styles.base,
-        { height, borderRadius: size === 'sm' ? radius.md : radius.pill },
+        {
+          height,
+          borderRadius: size === 'sm' || variant === 'marble' ? radius.md : radius.pill,
+        },
         scheme.container,
         fullWidth ? styles.fullWidth : styles.hugged,
         pressed && !isDisabled && styles.pressed,
         isDisabled && styles.disabled,
-        variant !== 'ghost' && variant !== 'outline' ? elevation.soft : null,
+        variant !== 'ghost' && variant !== 'outline' && variant !== 'marble'
+          ? elevation.soft
+          : null,
         style,
       ]}
     >
@@ -144,6 +149,16 @@ const SCHEMES: Record<ButtonVariant, Scheme> = {
       backgroundColor: colors.transparent,
       borderWidth: StyleSheet.hairlineWidth * 2,
       borderColor: colors.hairlineOnDark,
+    },
+    content: colors.textOnDark,
+  },
+  // Primary action sitting on the emerald marble: a lifted emerald fill inside
+  // a gold hairline, so it reads as raised stone rather than a pasted-on chip.
+  marble: {
+    container: {
+      backgroundColor: alpha(scale.emerald500, 0.55),
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: alpha(colors.accent, 0.55),
     },
     content: colors.textOnDark,
   },

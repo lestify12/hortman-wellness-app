@@ -1,12 +1,22 @@
 import { Link, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AuthScaffold } from '@/components/layout/AuthScaffold';
-import { Button, Divider, Text, TextField } from '@/components/ui';
+import { AuthBackdrop } from '@/components/brand/AuthBackdrop';
+import { VeloraLogoLockup } from '@/components/brand/VeloraLogoLockup';
+import { Button, Divider, SocialButton, Text, TextField } from '@/components/ui';
 import { useAuth } from '@/providers/AuthProvider';
 import { ServiceError } from '@/services';
-import { spacing } from '@/theme';
+import { contentMaxWidth, gutter, screen, scaleWidth, spacing } from '@/theme';
 
 interface FieldErrors {
   email?: string;
@@ -15,7 +25,14 @@ interface FieldErrors {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Sign In. Local validation first, then the auth repository. */
+/**
+ * Sign In.
+ *
+ * Laid out over the supplied marble background: the lockup sits on the ivory
+ * half, the form on the emerald half below the gold curve. The split is driven
+ * by flex proportions rather than absolute offsets, so the content tracks the
+ * curve as the artwork is cropped on taller or shorter handsets.
+ */
 export default function SignInRoute() {
   const router = useRouter();
   const { signIn } = useAuth();
@@ -55,127 +72,201 @@ export default function SignInRoute() {
   };
 
   return (
-    <AuthScaffold
-      eyebrow="Welcome back"
-      title="Sign in to Velora"
-      subtitle="Your journey, appointments and physicians — exactly where you left them."
-      footer={
-        <View style={styles.footer}>
-          <Text variant="bodySm" tone="secondary">
-            New to Velora?
-          </Text>
-          <Link href="/(auth)/sign-up" asChild>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Create an account"
-              hitSlop={8}
-              style={({ pressed }) => pressed && styles.pressed}
-            >
-              <Text variant="label" tone="gold" style={styles.footerAction}>
-                Request membership
-              </Text>
-            </Pressable>
-          </Link>
-        </View>
-      }
-    >
-      <TextField
-        label="Email address"
-        icon="mail"
-        value={email}
-        onChangeText={(v) => {
-          setEmail(v);
-          if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
-        }}
-        error={errors.email}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoComplete="email"
-        textContentType="emailAddress"
-        placeholder="you@example.com"
-        returnKeyType="next"
-      />
+    <AuthBackdrop>
+      <StatusBar style="dark" />
 
-      <TextField
-        label="Password"
-        icon="lock"
-        secure
-        value={password}
-        onChangeText={(v) => {
-          setPassword(v);
-          if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
-        }}
-        error={errors.password}
-        autoCapitalize="none"
-        autoComplete="current-password"
-        textContentType="password"
-        placeholder="••••••••"
-        returnKeyType="go"
-        onSubmitEditing={onSubmit}
-      />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+      >
+        <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            <View style={styles.column}>
+              {/* Ivory half — brand */}
+              <View style={styles.brand}>
+                <VeloraLogoLockup size={scaleWidth(70)} tone="emerald" showTagline />
+              </View>
 
-      <Link href="/(auth)/forgot-password" asChild>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Forgot your password"
-          hitSlop={8}
-          style={({ pressed }) => [styles.forgot, pressed && styles.pressed]}
-        >
-          <Text variant="caption" tone="secondary">
-            Forgotten your password?
-          </Text>
-        </Pressable>
-      </Link>
+              {/* Emerald half — form */}
+              <View style={styles.form}>
+                <Text variant="h1" tone="onDark" align="center">
+                  Welcome back
+                </Text>
+                <Text
+                  variant="body"
+                  tone="onDarkMuted"
+                  align="center"
+                  style={styles.subtitle}
+                >
+                  Sign in to continue your journey
+                </Text>
 
-      {formError ? (
-        <Text variant="bodySm" tone="primary" style={styles.formError}>
-          {formError}
-        </Text>
-      ) : null}
+                <TextField
+                  label="Email address"
+                  placeholder="Email address"
+                  showLabel={false}
+                  variant="boxed"
+                  onDark
+                  icon="mail"
+                  value={email}
+                  onChangeText={(v) => {
+                    setEmail(v);
+                    if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+                  }}
+                  error={errors.email}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                  returnKeyType="next"
+                />
 
-      <Button
-        label="Sign in"
-        onPress={onSubmit}
-        loading={submitting}
-        icon="arrow-right"
-        size="lg"
-        style={styles.submit}
-      />
+                <TextField
+                  label="Password"
+                  placeholder="Password"
+                  showLabel={false}
+                  variant="boxed"
+                  onDark
+                  icon="lock"
+                  secure
+                  value={password}
+                  onChangeText={(v) => {
+                    setPassword(v);
+                    if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
+                  }}
+                  error={errors.password}
+                  autoCapitalize="none"
+                  autoComplete="current-password"
+                  textContentType="password"
+                  returnKeyType="go"
+                  onSubmitEditing={onSubmit}
+                />
 
-      <Divider label="OR" style={styles.divider} />
+                <Link href="/(auth)/forgot-password" asChild>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Forgot your password"
+                    hitSlop={8}
+                    style={({ pressed }) => [styles.forgot, pressed && styles.pressed]}
+                  >
+                    <Text variant="caption" tone="gold">
+                      Forgot password?
+                    </Text>
+                  </Pressable>
+                </Link>
 
-      <Button
-        label="Create an account"
-        variant="outline"
-        onPress={() => router.push('/(auth)/sign-up')}
-      />
-    </AuthScaffold>
+                {formError ? (
+                  <Text variant="bodySm" tone="onDark" align="center" style={styles.formError}>
+                    {formError}
+                  </Text>
+                ) : null}
+
+                <Button
+                  label="Sign in"
+                  onPress={onSubmit}
+                  loading={submitting}
+                  variant="marble"
+                  size="lg"
+                  style={styles.submit}
+                />
+
+                <Divider label="OR" dark style={styles.divider} />
+
+                <SocialButton
+                  provider="apple"
+                  onPress={() => setFormError('Apple sign-in is not connected yet.')}
+                  style={styles.social}
+                />
+                <SocialButton
+                  provider="google"
+                  onPress={() => setFormError('Google sign-in is not connected yet.')}
+                />
+
+                <View style={styles.footer}>
+                  <Text variant="bodySm" tone="onDarkMuted">
+                    Don&apos;t have an account?{' '}
+                  </Text>
+                  <Link href="/(auth)/sign-up" asChild>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Create an account"
+                      hitSlop={8}
+                      style={({ pressed }) => pressed && styles.pressed}
+                    >
+                      <Text variant="bodySm" tone="gold">
+                        Create Account
+                      </Text>
+                    </Pressable>
+                  </Link>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
+    </AuthBackdrop>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  scroll: {
+    flexGrow: 1,
+  },
+  column: {
+    flex: 1,
+    width: '100%',
+    maxWidth: screen.isTablet ? contentMaxWidth : undefined,
+    alignSelf: 'center',
+    paddingHorizontal: gutter,
+  },
+  brand: {
+    // Roughly the ivory portion of the artwork, so the lockup lands above the
+    // gold curve without being pinned to a pixel offset.
+    flex: 0.38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: spacing.md,
+  },
+  form: {
+    flex: 0.62,
+    justifyContent: 'center',
+    paddingBottom: spacing.sm,
+  },
+  subtitle: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
   forgot: {
     alignSelf: 'flex-end',
-    marginTop: -spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginTop: -spacing.xs,
   },
   formError: {
-    marginTop: spacing.base,
+    marginTop: spacing.md,
   },
   submit: {
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
   },
   divider: {
-    marginVertical: spacing.xl,
+    marginVertical: spacing.md,
+  },
+  social: {
+    marginBottom: spacing.sm,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  footerAction: {
-    paddingVertical: spacing.xs,
+    marginTop: spacing.base,
   },
   pressed: {
     opacity: 0.55,
