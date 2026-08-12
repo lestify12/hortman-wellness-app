@@ -8,7 +8,9 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "backgroundColor": "#F7F3EE",
+    "icon": "./assets/images/icon.png",
     "splash": {
+      "image": "./assets/images/splash-icon.png",
       "backgroundColor": "#0D3B34",
       "resizeMode": "contain"
     },
@@ -20,13 +22,15 @@
     "android": {
       "package": "com.veloraclinics.app",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0D3B34"
       },
       "edgeToEdgeEnabled": true
     },
     "web": {
       "bundler": "metro",
-      "output": "static"
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": ["expo-router", "expo-font"],
     "experiments": {
