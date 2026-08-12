@@ -159,43 +159,47 @@ function Features({
   );
 }
 
-/** Numbered steps beside the glowing path artwork. */
+/**
+ * The glowing path, drawn whole, with the steps set against it.
+ *
+ * The artwork is one continuous winding curve, so it has to be shown complete —
+ * cropping it to a narrow rail breaks the line into what look like unrelated
+ * gold fragments. It is anchored right at its own aspect ratio and the steps
+ * are placed absolutely down the left, each sitting beside its node rather than
+ * flowing in a column that ignores where the curve actually is.
+ */
 function Journey({ slide }: { slide: OnboardingSlide }) {
   return (
     <View style={styles.journey}>
-      {/*
-        `cover`, not `contain`: the artwork is far wider than the rail it sits
-        in, so containing it fits by width and leaves a stamp a fifth of the
-        height. Covering crops to the central band of the winding path, which
-        still reads as a glowing line threading the three steps.
-      */}
       <Image
         source={images.onboarding.path}
         style={styles.journeyPath}
-        resizeMode="cover"
+        resizeMode="contain"
         accessible={false}
       />
 
-      <View style={styles.journeySteps}>
-        {(slide.steps ?? []).map((s, i) => (
-          <View key={s.index} style={[styles.step, i > 0 && styles.stepSpaced]}>
-            <View style={styles.stepHead}>
-              <Text variant="h4" color={scale.gold400} style={styles.stepIndex}>
-                {s.index}
-              </Text>
-              <Text variant="label" tone="onDark" numberOfLines={1} style={styles.stepTitle}>
-                {s.title}
-              </Text>
-            </View>
-            <Text variant="caption" tone="onDarkMuted" numberOfLines={2} style={styles.stepBody}>
-              {s.body}
-            </Text>
-          </View>
-        ))}
-      </View>
+      {(slide.steps ?? []).map((s, i) => (
+        <View key={s.index} style={[styles.journeyStep, { top: STEP_TOPS[i] }]}>
+          <Text variant="h4" color={scale.gold400}>
+            {s.index}
+          </Text>
+          <Text variant="label" tone="onDark" style={styles.stepTitle}>
+            {s.title}
+          </Text>
+          <Text variant="caption" tone="onDarkMuted" numberOfLines={3} style={styles.stepBody}>
+            {s.body}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }
+
+/**
+ * Vertical placement of each step, as a share of the block height. Tuned to the
+ * three nodes in the artwork, which sit at roughly 24%, 57% and 80%.
+ */
+const STEP_TOPS = ['0%', '35%', '69%'] as const;
 
 const DISC = scaleWidth(44);
 
@@ -250,30 +254,26 @@ const styles = StyleSheet.create({
   },
 
   journey: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flex: 1,
   },
   journeyPath: {
-    width: scaleWidth(52),
-    height: scaleWidth(210),
-    marginRight: spacing.base,
+    position: 'absolute',
+    top: 0,
+    right: -spacing.md,
+    // Both axes explicit. Absolute top/bottom insets are not enough: an Image
+    // with no definite height falls back to the artwork's own 620 px and
+    // overflows the block, leaving one node filling the corner.
+    height: '100%',
+    // Wide enough to show the whole curve; the steps clear its nodes on the left.
+    width: '66%',
   },
-  journeySteps: {
-    flex: 1,
-  },
-  step: {},
-  stepSpaced: {
-    marginTop: spacing.base,
-  },
-  stepHead: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  stepIndex: {
-    marginRight: spacing.sm,
+  journeyStep: {
+    position: 'absolute',
+    left: 0,
+    width: '58%',
   },
   stepTitle: {
-    flex: 1,
+    marginTop: spacing.xxs,
   },
   stepBody: {
     marginTop: spacing.xs,

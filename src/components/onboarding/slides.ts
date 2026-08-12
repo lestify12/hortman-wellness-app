@@ -65,17 +65,17 @@ export const SLIDES: OnboardingSlide[] = [
       {
         index: '01',
         title: 'Discover Your Goals',
-        body: 'Tell us what you want to improve and what matters most to you.',
+        body: 'Tell us what you want to improve and what matters most.',
       },
       {
         index: '02',
         title: 'Your Personalized Plan',
-        body: 'We craft a care plan just for you with the right treatments and programs.',
+        body: 'A care plan built for you, with the right treatments.',
       },
       {
         index: '03',
         title: 'Track Your Progress',
-        body: 'Stay on track with your appointments, milestones, and real progress.',
+        body: 'Stay on track with appointments and real milestones.',
       },
     ],
   },

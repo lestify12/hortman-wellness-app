@@ -197,12 +197,12 @@ export default function OnboardingRoute() {
 /** Aspect (h/w) of login-background.jpg — 853x1844. */
 const ART_ASPECT = 1844 / 853;
 /** Slight zoom, so raising the artwork still leaves stone at the bottom. */
-const ART_ZOOM = 1.12;
+const ART_ZOOM = 1.3;
 /** How far the backdrop is raised so the curve clears the paged content. */
-const CURVE_LIFT = 100;
-const MONO = scaleWidth(48);
+const CURVE_LIFT = 196;
+const MONO = scaleWidth(66);
 /** Gap between the fixed lockup and the paged band. */
-const PAGER_OFFSET = 132;
+const PAGER_OFFSET = 84;
 
 const styles = StyleSheet.create({
   root: {
