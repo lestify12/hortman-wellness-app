@@ -53,8 +53,6 @@ export const images = {
     personal: require('../../assets/images/onboarding-personal.png'),
     expert: require('../../assets/images/onboarding-expert.png'),
     premium: require('../../assets/images/onboarding-premium.png'),
-    /** Glowing three-node path; alpha is the glow, so it composites additively. */
-    path: require('../../assets/images/onboarding-path.png'),
     /** "Your Care Plan" render, edge-faded so it dissolves into the marble. */
     carePlan: require('../../assets/images/onboarding-careplan.png'),
   },

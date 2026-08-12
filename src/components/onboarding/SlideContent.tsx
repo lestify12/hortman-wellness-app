@@ -2,6 +2,7 @@ import React from 'react';
 import { Animated, Image, StyleSheet, View } from 'react-native';
 
 import { images } from '@/constants/images';
+import { JOURNEY_NODES, JourneyPath } from './JourneyPath';
 import { Ornament, Text } from '@/components/ui';
 import { alpha, colors, scale, scaleWidth, spacing } from '@/theme';
 import type { OnboardingSlide } from './slides';
@@ -91,7 +92,7 @@ export function SlideContent({ slide, width, scrollX, index }: Props) {
         {slide.kind === 'features' ? (
           <Features slide={slide} scrollX={scrollX} width={width} index={index} />
         ) : slide.kind === 'journey' ? (
-          <Journey slide={slide} />
+          <Journey slide={slide} width={width} />
         ) : (
           <Animated.View style={[styles.planWrap, { transform: [{ scale: artScale }] }]}>
             <Image
@@ -160,62 +161,76 @@ function Features({
 }
 
 /**
- * The glowing path, drawn whole, with the steps set against it.
+ * The journey steps, laid out against the drawn path.
  *
- * The artwork is one continuous winding curve, so it has to be shown complete —
- * cropping it to a narrow rail breaks the line into what look like unrelated
- * gold fragments. It is anchored right at its own aspect ratio and the steps
- * are placed absolutely down the left, each sitting beside its node rather than
- * flowing in a column that ignores where the curve actually is.
+ * Each block is positioned from the curve's own node coordinates rather than
+ * from hand-tuned offsets, so the copy and the line cannot drift apart: the
+ * block's right edge stops a fixed gap short of its node, and its baseline sits
+ * just above it. Nudging the curve now moves the text with it.
  */
-function Journey({ slide }: { slide: OnboardingSlide }) {
-  return (
-    <View style={styles.journey}>
-      <Image
-        source={images.onboarding.path}
-        style={styles.journeyPath}
-        resizeMode="contain"
-        accessible={false}
-      />
+function Journey({ slide, width }: { slide: OnboardingSlide; width: number }) {
+  // The block is measured, so the path can be sized from real numbers rather
+  // than percentages that the copy would then have to guess at.
+  const [box, setBox] = React.useState({ w: 0, h: 0 });
 
-      {(slide.steps ?? []).map((s, i) => (
-        <View key={s.index} style={[styles.journeyStep, STEP_POS[i]]}>
-          <Text variant="h3" color={scale.gold400}>
-            {s.index}
-          </Text>
-          <Text variant="label" tone="onDark" style={styles.stepTitle}>
-            {s.title}
-          </Text>
-          <Text variant="caption" tone="onDarkMuted" numberOfLines={3} style={styles.stepBody}>
-            {s.body}
-          </Text>
-        </View>
-      ))}
+  return (
+    <View
+      style={styles.journey}
+      onLayout={(e) =>
+        setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })
+      }
+    >
+      {box.w > 0 ? (
+        <>
+          <View style={styles.journeyPath}>
+            <JourneyPath width={box.w * PATH_WIDTH} height={box.h} />
+          </View>
+
+          {(slide.steps ?? []).map((s, i) => {
+            const node = JOURNEY_NODES[i];
+            const pathLeft = box.w * (1 - PATH_WIDTH);
+            const nodeX = pathLeft + node.x * box.w * PATH_WIDTH;
+            const nodeY = node.y * box.h;
+            // Fixed width, variable left: that is what produces the stagger.
+            // Sizing the width to the node instead would leave every block
+            // flush left and the column would read as unrelated to the curve.
+            const blockWidth = box.w * BLOCK_WIDTH;
+            const left = Math.max(0, nodeX - NODE_GAP - blockWidth);
+
+            return (
+              <View
+                key={s.index}
+                style={[
+                  styles.journeyStep,
+                  { width: blockWidth, left, top: Math.max(0, nodeY - BLOCK_LIFT) },
+                ]}
+              >
+                <Text variant="h3" color={scale.gold400}>
+                  {s.index}
+                </Text>
+                <Text variant="label" tone="onDark" style={styles.stepTitle}>
+                  {s.title}
+                </Text>
+                <Text variant="caption" tone="onDarkMuted" numberOfLines={2} style={styles.stepBody}>
+                  {s.body}
+                </Text>
+              </View>
+            );
+          })}
+        </>
+      ) : null}
     </View>
   );
 }
 
-/**
- * Where each step sits against the curve, as shares of the block.
- *
- * The horizontal stagger is the point: the artwork's three nodes are not
- * stacked in a line, so a rigid left column leaves the text unrelated to the
- * curve it is meant to annotate. Each block is nudged to sit just clear of its
- * own node, which is what makes the two read as one composition.
- *
- * Nodes sit at roughly (48%, 24%), (48%, 57%) and (83%, 80%) of the artwork.
- */
-const STEP_POS = [
-  { top: '-4%', left: '0%', width: '50%' },
-  // Indented, following the curve — but only as far as the glow allows. The
-  // artwork swings widest left at this height, and text over the glow is the
-  // one thing that costs more than the stagger buys.
-  { top: '30%', left: '14%', width: '46%' },
-  { top: '63%', left: '6%', width: '50%' },
-] as const;
-
-/** How far the curve sits past the block's right edge, clearing the columns. */
-const PATH_BLEED = 48;
+/** Share of the block's width the drawn path occupies, anchored right. */
+const PATH_WIDTH = 0.42;
+/** Share of the block's width each step's text occupies. */
+const BLOCK_WIDTH = 0.56;
+/** Clearance between a step's text and its node. */
+const NODE_GAP = 22;
+/** How far above its node a step's block starts. */
+const BLOCK_LIFT = 38;
 
 const DISC = scaleWidth(44);
 
@@ -274,15 +289,8 @@ const styles = StyleSheet.create({
   },
   journeyPath: {
     position: 'absolute',
-    right: -PATH_BLEED,
-    // Bleeds a little above and below the block so the curve reads at a size
-    // worth looking at; the block itself is only ~190pt tall on a handset.
-    top: '-9%',
-    height: '124%',
-    // Both axes explicit. Absolute insets are not enough: an Image with no
-    // definite height falls back to the artwork's own 620 px and overflows,
-    // leaving a single node filling the corner.
-    width: '66%',
+    right: 0,
+    top: 0,
   },
   journeyStep: {
     position: 'absolute',

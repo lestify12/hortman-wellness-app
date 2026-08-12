@@ -36,7 +36,6 @@ onboarding and auth screens draw.
 | `onboarding-personal.png` | 240×160, 37 KB | "Personalized for You" icon |
 | `onboarding-expert.png` | 240×160, 45 KB | "Expert Care You Can Trust" icon |
 | `onboarding-premium.png` | 240×160, 34 KB | "A Premium Experience" icon |
-| `onboarding-path.png` | 413×620, 211 KB | Glowing three-node path, onboarding slide 2 |
 | `onboarding-careplan.png` | 373×560, 269 KB | "Your Care Plan" render, onboarding slide 3 |
 
 The full-resolution originals — `login_background.png`, the three marble
@@ -84,11 +83,14 @@ on what the black is hiding, and getting this wrong is visible immediately:
 
 - **Solid gold glyphs** (the three feature icons) take the same treatment as the
   monogram: luminance matte, colour regenerated from the gold ramp.
-- **Glowing artwork** (the winding path) takes its alpha straight from
-  luminance, with no threshold and no re-tighten. Thresholding a glow turns it
-  into an opaque blob with a hard, fringed edge instead of light. Its dark node
-  interiors fall away to transparent, which is correct — the marble shows
-  through them.
+- **Glowing artwork** was the one that did not survive being a bitmap at all.
+  The supplied path is a heavy opaque ribbon, several times the line weight of
+  the reference design, and a raster glow cannot be thinned after the fact —
+  only faded until it turns grey. It is now stroked in
+  `components/onboarding/JourneyPath.tsx` instead: three passes of one curve
+  (faint halo, body, hairline core). That gives a delicate line at a controlled
+  intensity, and puts the nodes at coordinates the copy is laid out against.
+  The cut-out is kept in `assets/brand/` for reference.
 - **Subjects whose own darks matter** (the Care Plan render, with its dark
   phone body and vase) cannot be keyed at all: luminance would eat the subject
   along with the background. That one keeps its pixels and gets a soft
