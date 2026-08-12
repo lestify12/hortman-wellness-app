@@ -8,6 +8,7 @@ export type { CardTone } from './Card';
 export { Chip, ChipRow } from './Chip';
 export { Divider } from './Divider';
 export { IconButton } from './IconButton';
+export { Ornament } from './Ornament';
 export { ProgressBar, ProgressRing, StepDots } from './Progress';
 export { Screen } from './Screen';
 export { SocialButton } from './SocialButton';

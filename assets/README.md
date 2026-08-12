@@ -22,8 +22,8 @@ made the login screen slow to appear.
 
 ## What is already here
 
-`assets/images/` holds the app icons plus the display-sized artwork the auth
-screens draw.
+`assets/images/` holds the app icons plus the display-sized artwork the
+onboarding and auth screens draw.
 
 | File | Size | Used by |
 | --- | --- | --- |
@@ -31,13 +31,18 @@ screens draw.
 | `adaptive-icon.png` | 1024×1024 | Android adaptive foreground — transparent, mark inside the safe zone |
 | `splash-icon.png` | 1024×1024 | Native splash — transparent, over `#0D3B34` |
 | `favicon.png` | 96×96 | Web tab icon — rings dropped, they disappear at this size |
-| `login-background.jpg` | 853×1844, 139 KB | Auth backdrop: ivory marble, gold curve, emerald marble |
-| `velora-monogram.png` | 340×320, 82 KB | Gold V on transparency, used in the auth lockup |
+| `login-background.jpg` | 853×1844, 139 KB | Auth and onboarding backdrop: ivory marble, gold curve, emerald marble |
+| `velora-monogram.png` | 340×320, 82 KB | Gold V on transparency, used in the auth and onboarding lockups |
+| `onboarding-personal.png` | 240×160, 37 KB | "Personalized for You" icon |
+| `onboarding-expert.png` | 240×160, 45 KB | "Expert Care You Can Trust" icon |
+| `onboarding-premium.png` | 240×160, 34 KB | "A Premium Experience" icon |
+| `onboarding-path.png` | 413×620, 211 KB | Glowing three-node path, onboarding slide 2 |
+| `onboarding-careplan.png` | 373×560, 269 KB | "Your Care Plan" render, onboarding slide 3 |
 
-The full-resolution originals — `login_background.png` and the three marble
-textures — sit in `assets/brand/`. They are sources, not assets: the background
-alone is 1.9 MB against 139 KB as a JPEG, for no visible difference at display
-size.
+The full-resolution originals — `login_background.png`, the three marble
+textures and the five onboarding renders — sit in `assets/brand/`. They are
+sources, not assets: the background alone is 1.9 MB against 139 KB as a JPEG,
+for no visible difference at display size.
 
 The four icons are wired up in `app.json` by path, which does not go through
 Metro — that is why they are not in the registry. Replace any file in place,
@@ -71,6 +76,24 @@ light ground, in case the mark is ever re-cut:
 The wordmark is *not* sliced from the same render. It is typeset (see
 `VeloraLogoLockup.tsx`) so it stays crisp at any size and recolours per surface;
 the supplied render has it in a near-black emerald that cannot sit on ivory.
+
+### The onboarding cut-outs
+
+All five were supplied as artwork on black. Which treatment each needs depends
+on what the black is hiding, and getting this wrong is visible immediately:
+
+- **Solid gold glyphs** (the three feature icons) take the same treatment as the
+  monogram: luminance matte, colour regenerated from the gold ramp.
+- **Glowing artwork** (the winding path) takes its alpha straight from
+  luminance, with no threshold and no re-tighten. Thresholding a glow turns it
+  into an opaque blob with a hard, fringed edge instead of light. Its dark node
+  interiors fall away to transparent, which is correct — the marble shows
+  through them.
+- **Subjects whose own darks matter** (the Care Plan render, with its dark
+  phone body and vase) cannot be keyed at all: luminance would eat the subject
+  along with the background. That one keeps its pixels and gets a soft
+  elliptical edge fade instead, so the frame dissolves into the dark emerald
+  marble rather than ending on a rectangle.
 
 ### The generated icons
 

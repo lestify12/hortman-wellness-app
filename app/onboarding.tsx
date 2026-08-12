@@ -1,9 +1,10 @@
-import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   Animated,
+  Image,
+  ScrollView,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -13,59 +14,38 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Marble } from '@/components/brand/Marble';
-import { VeloraMonogram } from '@/components/brand/VeloraMonogram';
-import { Button, Divider, Text } from '@/components/ui';
+import { PageDots } from '@/components/onboarding/PageDots';
+import { SlideContent } from '@/components/onboarding/SlideContent';
+import { SLIDES } from '@/components/onboarding/slides';
+import { Button, Text } from '@/components/ui';
+import { images } from '@/constants/images';
 import { useAuth } from '@/providers/AuthProvider';
-import { alpha, colors, gutter, radius, scale, scaleWidth, spacing } from '@/theme';
-
-interface Slide {
-  key: string;
-  eyebrow: string;
-  title: string;
-  body: string;
-  icon: keyof typeof Feather.glyphMap;
-}
-
-const SLIDES: Slide[] = [
-  {
-    key: 'ritual',
-    eyebrow: 'Considered care',
-    title: 'Medicine, refined into ritual',
-    body: 'Every Velora protocol is designed by physicians and delivered with the calm of a private atelier. No queues, no clinical glare — only considered care.',
-    icon: 'feather',
-  },
-  {
-    key: 'journey',
-    eyebrow: 'Your journey',
-    title: 'Progress you can actually see',
-    body: 'Track each session, measurement and milestone in one place. Your journey is documented so results are never a matter of memory.',
-    icon: 'trending-up',
-  },
-  {
-    key: 'access',
-    eyebrow: 'Membership',
-    title: 'Your physicians, one message away',
-    body: 'Priority booking, private suites and direct access to the specialists who know your history. Everything arranged before you arrive.',
-    icon: 'key',
-  },
-];
+import { colors, fontFamily, gutter, scaleWidth, spacing } from '@/theme';
 
 /**
- * Onboarding carousel.
+ * Onboarding.
  *
- * A paged horizontal scroll with a marble hero per slide. The scroll offset
- * drives both the hero cross-fade and the progress rule, so the motion stays
- * tied to the gesture rather than to a timer.
+ * The marble backdrop, the logo lockup and the footer controls are fixed; only
+ * the middle band pages. That keeps the brand anchored while the content moves,
+ * and means the expensive artwork is never re-laid-out mid-gesture.
+ *
+ * Paging is a plain horizontal ScrollView rather than a FlatList: three slides
+ * is well inside what should stay mounted, and keeping them all rendered means
+ * the parallax has something to move on both sides of the fold.
  */
 export default function OnboardingRoute() {
   const router = useRouter();
   const { completeOnboarding } = useAuth();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+
+  // Keep the artwork's own aspect so nothing distorts, then zoom just enough
+  // that lifting it still covers the bottom of the screen.
+  const artWidth = width * ART_ZOOM;
+  const artHeight = Math.max(artWidth * ART_ASPECT, height + CURVE_LIFT);
 
   const [index, setIndex] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
-  const scrollRef = useRef<Animated.FlatList<Slide>>(null);
 
   const isLast = index === SLIDES.length - 1;
 
@@ -74,114 +54,136 @@ export default function OnboardingRoute() {
     router.replace('/(auth)/sign-up');
   }, [completeOnboarding, router]);
 
+  const goToSignIn = useCallback(async () => {
+    await completeOnboarding();
+    router.replace('/(auth)/sign-in');
+  }, [completeOnboarding, router]);
+
   const advance = useCallback(() => {
     if (isLast) return void finish();
     const next = index + 1;
+    // Set the index here as well as in onMomentumScrollEnd: a programmatic
+    // scrollTo does not reliably emit a momentum-end event, so relying on that
+    // alone leaves the dots and the button label stuck on the first slide.
     setIndex(next);
-    scrollRef.current?.scrollToOffset({ offset: next * width, animated: true });
+    scrollRef.current?.scrollTo({ x: next * width, animated: true });
   }, [index, isLast, width, finish]);
 
   const onMomentumEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const next = Math.round(e.nativeEvent.contentOffset.x / width);
-      setIndex(next);
+      if (next !== index) setIndex(next);
     },
-    [width],
-  );
-
-  const heroOpacity = useMemo(
-    () =>
-      SLIDES.map((_, i) =>
-        scrollX.interpolate({
-          inputRange: [(i - 1) * width, i * width, (i + 1) * width],
-          outputRange: [0, 1, 0],
-          extrapolate: 'clamp',
-        }),
-      ),
-    [scrollX, width],
+    [width, index],
   );
 
   return (
     <View style={styles.root}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
-      {/* Marble heroes cross-fade behind the paged copy. */}
-      <View style={styles.hero} pointerEvents="none">
-        {SLIDES.map((slide, i) => (
-          <Animated.View key={slide.key} style={[StyleSheet.absoluteFill, { opacity: heroOpacity[i] }]}>
-            <Marble
-              variant={i === 1 ? 'champagne' : 'emerald'}
-              intensity={i === 1 ? 0.9 : 1.15}
-              style={StyleSheet.absoluteFillObject}
-            />
-          </Animated.View>
-        ))}
+      {/*
+        Sized explicitly rather than left to `cover`. Onboarding carries far
+        more content below the gold curve than sign-in does, so the artwork is
+        zoomed slightly and pulled upward until the curve's lowest point clears
+        the headings. Letting `cover` derive the scale from a taller box does
+        the opposite — it zooms in and pushes the curve further down.
+      */}
+      <Image
+        source={images.backgrounds.login}
+        style={[
+          styles.backdrop,
+          {
+            width: artWidth,
+            height: artHeight,
+            left: (width - artWidth) / 2,
+            top: -CURVE_LIFT,
+          },
+        ]}
+        resizeMode="cover"
+        fadeDuration={0}
+        accessible={false}
+      />
 
-        <View style={styles.heroContent}>
-          <VeloraMonogram size={scaleWidth(64)} tone="gold" ring={false} />
-        </View>
-      </View>
-
-      <SafeAreaView style={styles.sheetWrap} edges={['bottom']}>
-        <View style={styles.sheet}>
-          <Animated.FlatList
-            ref={scrollRef}
-            data={SLIDES}
-            keyExtractor={(item) => item.key}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={onMomentumEnd}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-              useNativeDriver: true,
-            })}
-            scrollEventThrottle={16}
-            renderItem={({ item }) => (
-              <View style={[styles.slide, { width }]}>
-                <View style={styles.iconDisc}>
-                  <Feather name={item.icon} size={19} color={scale.emerald600} />
-                </View>
-
-                <Text variant="eyebrow" tone="gold" style={styles.eyebrow}>
-                  {item.eyebrow}
-                </Text>
-                <Text variant="display" style={styles.title}>
-                  {item.title}
-                </Text>
-                <Text variant="bodyLg" tone="secondary" style={styles.body}>
-                  {item.body}
-                </Text>
-              </View>
-            )}
-          />
-
-          <View style={styles.controls}>
-            <View style={styles.dots}>
-              {SLIDES.map((slide, i) => (
-                <View key={slide.key} style={[styles.dot, i === index && styles.dotActive]} />
-              ))}
-            </View>
-
-            <Button
-              label={isLast ? 'Begin' : 'Continue'}
-              onPress={advance}
-              variant={isLast ? 'gold' : 'primary'}
-              icon="arrow-right"
-              size="lg"
-            />
-
-            <Divider label={isLast ? 'ALREADY A MEMBER' : 'OR'} style={styles.divider} />
-
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        {/* Fixed brand header, on the ivory half */}
+        <View style={styles.header}>
+          <View style={styles.skipRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Sign in to an existing account"
-              onPress={async () => {
-                await completeOnboarding();
-                router.replace('/(auth)/sign-in');
-              }}
-              style={({ pressed }) => [styles.skip, pressed && styles.pressed]}
+              accessibilityLabel="Skip onboarding"
+              hitSlop={12}
+              onPress={finish}
+              style={({ pressed }) => pressed && styles.pressed}
             >
-              <Text variant="label" tone="primary">
+              <Text variant="bodySm" tone="primary">
+                Skip
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.lockup}>
+            <Image
+              source={images.brand.monogram}
+              style={styles.monogram}
+              resizeMode="contain"
+              accessibilityLabel="Velora Clinics"
+            />
+            <Text style={styles.wordmark}>VELORA</Text>
+            <Text style={styles.subWordmark}>CLINICS</Text>
+            <Text variant="bodySm" tone="primary" align="center" style={styles.tagline}>
+              Elevated care.
+            </Text>
+            <Text variant="bodySm" tone="primary" align="center">
+              Exceptional you.
+            </Text>
+          </View>
+        </View>
+
+        {/* Paged band */}
+        <Animated.ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={onMomentumEnd}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+            useNativeDriver: true,
+          })}
+          scrollEventThrottle={16}
+          style={styles.pager}
+          // Snapping decelerates fast so the page settles crisply instead of
+          // coasting, which is what makes a slow pager feel loose.
+          decelerationRate="fast"
+        >
+          {SLIDES.map((slide, i) => (
+            <SlideContent key={slide.key} slide={slide} width={width} scrollX={scrollX} index={i} />
+          ))}
+        </Animated.ScrollView>
+
+        {/* Fixed footer */}
+        <View style={styles.footer}>
+          <PageDots count={SLIDES.length} index={index} style={styles.dots} />
+
+          <Button
+            label={isLast ? 'Get Started' : 'Next'}
+            onPress={advance}
+            icon="arrow-right"
+            variant="marble"
+            size="lg"
+          />
+
+          <View style={styles.signInRow}>
+            <Text variant="bodySm" tone="onDarkMuted">
+              Already have an account?{' '}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
+              hitSlop={8}
+              onPress={goToSignIn}
+              style={({ pressed }) => pressed && styles.pressed}
+            >
+              <Text variant="bodySm" tone="gold">
                 Sign in
               </Text>
             </Pressable>
@@ -192,79 +194,81 @@ export default function OnboardingRoute() {
   );
 }
 
+/** Aspect (h/w) of login-background.jpg — 853x1844. */
+const ART_ASPECT = 1844 / 853;
+/** Slight zoom, so raising the artwork still leaves stone at the bottom. */
+const ART_ZOOM = 1.12;
+/** How far the backdrop is raised so the curve clears the paged content. */
+const CURVE_LIFT = 100;
+const MONO = scaleWidth(48);
+/** Gap between the fixed lockup and the paged band. */
+const PAGER_OFFSET = 132;
+
 const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.surfaceInverse,
   },
-  hero: {
+  backdrop: {
+    position: 'absolute',
+  },
+  safe: {
     flex: 1,
   },
-  heroContent: {
+  header: {
+    paddingHorizontal: gutter,
+  },
+  skipRow: {
+    alignItems: 'flex-end',
+    paddingTop: spacing.xs,
+    minHeight: 24,
+  },
+  lockup: {
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  monogram: {
+    width: MONO * 1.06,
+    height: MONO,
+  },
+  wordmark: {
+    fontFamily: fontFamily.serif,
+    color: colors.textPrimary,
+    fontSize: MONO * 0.34,
+    letterSpacing: MONO * 0.115,
+    marginRight: -MONO * 0.115,
+    marginTop: spacing.sm,
+    includeFontPadding: false,
+  },
+  subWordmark: {
+    fontFamily: fontFamily.sansLight,
+    color: colors.textSecondary,
+    fontSize: MONO * 0.15,
+    letterSpacing: MONO * 0.15,
+    marginRight: -MONO * 0.15,
+    marginTop: spacing.xs,
+    includeFontPadding: false,
+  },
+  tagline: {
+    marginTop: spacing.sm,
+  },
+  pager: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: spacing.xxxl,
+    // Drops the paged band clear of the curve's lowest point.
+    marginTop: PAGER_OFFSET,
   },
-  sheetWrap: {
-    backgroundColor: colors.canvas,
-    borderTopLeftRadius: radius.xxl,
-    borderTopRightRadius: radius.xxl,
-    // Lifts the sheet over the marble hero.
-    marginTop: -radius.xxl,
-  },
-  sheet: {
-    paddingTop: spacing.xxl,
-  },
-  slide: {
+  footer: {
     paddingHorizontal: gutter,
-  },
-  iconDisc: {
-    width: 46,
-    height: 46,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: alpha(scale.emerald600, 0.08),
-    marginBottom: spacing.lg,
-  },
-  eyebrow: {
-    marginBottom: spacing.md,
-  },
-  title: {
-    marginBottom: spacing.base,
-  },
-  body: {
-    minHeight: 100,
-  },
-  controls: {
-    paddingHorizontal: gutter,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.sm,
   },
   dots: {
+    marginBottom: spacing.lg,
+  },
+  signInRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xl,
-    gap: spacing.sm,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: radius.pill,
-    backgroundColor: colors.hairlineStrong,
-  },
-  dotActive: {
-    width: 22,
-    backgroundColor: colors.accent,
-  },
-  divider: {
-    marginVertical: spacing.lg,
-  },
-  skip: {
-    alignSelf: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    justifyContent: 'center',
+    marginTop: spacing.base,
   },
   pressed: {
     opacity: 0.55,
