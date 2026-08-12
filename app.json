@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Velora Clinics",
+    "slug": "velora-clinics",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "velora",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "backgroundColor": "#F7F3EE",
+    "splash": {
+      "backgroundColor": "#0D3B34",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.veloraclinics.app"
+    },
+    "android": {
+      "package": "com.veloraclinics.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0D3B34"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": ["expo-router", "expo-font"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
