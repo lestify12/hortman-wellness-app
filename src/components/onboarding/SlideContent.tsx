@@ -179,7 +179,7 @@ function Journey({ slide }: { slide: OnboardingSlide }) {
       />
 
       {(slide.steps ?? []).map((s, i) => (
-        <View key={s.index} style={[styles.journeyStep, { top: STEP_TOPS[i] }]}>
+        <View key={s.index} style={[styles.journeyStep, STEP_POS[i]]}>
           <Text variant="h4" color={scale.gold400}>
             {s.index}
           </Text>
@@ -196,10 +196,22 @@ function Journey({ slide }: { slide: OnboardingSlide }) {
 }
 
 /**
- * Vertical placement of each step, as a share of the block height. Tuned to the
- * three nodes in the artwork, which sit at roughly 24%, 57% and 80%.
+ * Where each step sits against the curve, as shares of the block.
+ *
+ * The horizontal stagger is the point: the artwork's three nodes are not
+ * stacked in a line, so a rigid left column leaves the text unrelated to the
+ * curve it is meant to annotate. Each block is nudged to sit just clear of its
+ * own node, which is what makes the two read as one composition.
+ *
+ * Nodes sit at roughly (48%, 24%), (48%, 57%) and (83%, 80%) of the artwork.
  */
-const STEP_TOPS = ['0%', '35%', '69%'] as const;
+const STEP_POS = [
+  { top: '-2%', left: '0%', width: '60%' },
+  // Narrower: the curve bulges furthest left at this height, and text running
+  // over the glow is the one thing that costs more than the stagger buys.
+  { top: '31%', left: '7%', width: '46%' },
+  { top: '65%', left: '2%', width: '62%' },
+] as const;
 
 const DISC = scaleWidth(44);
 
@@ -258,19 +270,18 @@ const styles = StyleSheet.create({
   },
   journeyPath: {
     position: 'absolute',
-    top: 0,
-    right: -spacing.md,
-    // Both axes explicit. Absolute top/bottom insets are not enough: an Image
-    // with no definite height falls back to the artwork's own 620 px and
-    // overflows the block, leaving one node filling the corner.
-    height: '100%',
-    // Wide enough to show the whole curve; the steps clear its nodes on the left.
-    width: '66%',
+    right: -spacing.xxl,
+    // Bleeds a little above and below the block so the curve reads at a size
+    // worth looking at; the block itself is only ~190pt tall on a handset.
+    top: '-9%',
+    height: '124%',
+    // Both axes explicit. Absolute insets are not enough: an Image with no
+    // definite height falls back to the artwork's own 620 px and overflows,
+    // leaving a single node filling the corner.
+    width: '70%',
   },
   journeyStep: {
     position: 'absolute',
-    left: 0,
-    width: '58%',
   },
   stepTitle: {
     marginTop: spacing.xxs,
