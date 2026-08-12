@@ -49,41 +49,44 @@ export function AuthScaffold({
     <View style={styles.root}>
       <StatusBar style="light" />
 
-      <Marble variant="emerald" style={styles.hero} intensity={1.05}>
-        <SafeAreaView edges={['top']} style={styles.heroSafe}>
-          {showBack ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              hitSlop={14}
-              onPress={() => (router.canGoBack() ? router.back() : router.replace('/(auth)/sign-in'))}
-              style={({ pressed }) => [styles.back, pressed && styles.pressed]}
-            >
-              <Feather name="chevron-left" size={24} color={colors.textOnDark} />
-            </Pressable>
-          ) : null}
-
-          <View style={[styles.lockup, compactHero && styles.lockupCompact]}>
-            <VeloraMonogram size={scaleWidth(compactHero ? 52 : 66)} tone="gold" />
-            <VeloraWordmark
-              size={scaleWidth(compactHero ? 13 : 15)}
-              tone="ivory"
-              align="center"
-              showTagline={!compactHero}
-              style={styles.wordmark}
-            />
-          </View>
-        </SafeAreaView>
-      </Marble>
-
       <KeyboardAvoidingView
-        style={styles.sheetWrap}
+        style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
       >
-        <View style={styles.sheet}>
+        {/* Hero takes whatever vertical space the sheet leaves, so the logo
+            lockup is never clipped no matter how tall the form is. */}
+        <Marble variant="emerald" style={styles.hero} intensity={1.05}>
+          <SafeAreaView edges={['top']} style={styles.heroSafe}>
+            {showBack ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+                hitSlop={14}
+                onPress={() =>
+                  router.canGoBack() ? router.back() : router.replace('/(auth)/sign-in')
+                }
+                style={({ pressed }) => [styles.back, pressed && styles.pressed]}
+              >
+                <Feather name="chevron-left" size={24} color={colors.textOnDark} />
+              </Pressable>
+            ) : null}
+
+            <View style={styles.lockup}>
+              <VeloraMonogram size={scaleWidth(compactHero ? 54 : 68)} tone="gold" />
+              <VeloraWordmark
+                size={scaleWidth(compactHero ? 13 : 15)}
+                tone="ivory"
+                align="center"
+                showTagline={!compactHero}
+                style={styles.wordmark}
+              />
+            </View>
+          </SafeAreaView>
+        </Marble>
+
+        <View style={[styles.sheet, compactHero && styles.sheetTall]}>
           <ScrollView
-            style={styles.scroll}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -119,12 +122,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.surfaceInverse,
   },
+  flex: {
+    flex: 1,
+  },
   hero: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '46%',
+    flex: 1,
+    // Guarantees room for the lockup even when the form is at its tallest.
+    minHeight: 190,
   },
   heroSafe: {
     flex: 1,
@@ -142,27 +146,23 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: spacing.xxxl,
-  },
-  lockupCompact: {
-    paddingBottom: spacing.huge,
+    // Offsets the sheet's overlap so the lockup reads as optically centred.
+    paddingBottom: spacing.base,
   },
   wordmark: {
     marginTop: spacing.base,
   },
-  sheetWrap: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
   sheet: {
-    maxHeight: '78%',
+    maxHeight: '72%',
     backgroundColor: colors.canvas,
     borderTopLeftRadius: radius.xxl,
     borderTopRightRadius: radius.xxl,
     overflow: 'hidden',
+    // Overlaps the marble hero so the rounded edge sits over the stone.
+    marginTop: -radius.xxl,
   },
-  scroll: {
-    flexGrow: 0,
+  sheetTall: {
+    maxHeight: '80%',
   },
   scrollContent: {
     paddingTop: spacing.xxl,

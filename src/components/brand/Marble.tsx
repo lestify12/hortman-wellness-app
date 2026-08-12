@@ -43,70 +43,111 @@ export function Marble({
         style={StyleSheet.absoluteFill}
       />
 
+      {/*
+        The viewBox is deliberately close to a portrait handset's aspect ratio.
+        With "slice", a squarer box would be scaled up ~5x to cover the screen,
+        magnifying every vein into a coarse zigzag; matching the aspect keeps
+        the drawn units close to points.
+      */}
       <Svg
         style={StyleSheet.absoluteFill}
-        viewBox="0 0 100 160"
+        viewBox="0 0 100 216"
         preserveAspectRatio="xMidYMid slice"
         pointerEvents="none"
       >
         <Defs>
-          <SvgGradient id={`vein-${variant}`} x1="0" y1="0" x2="100" y2="160" gradientUnits="userSpaceOnUse">
-            <Stop offset="0" stopColor={config.veinFrom} stopOpacity={0.9} />
-            <Stop offset="0.55" stopColor={config.veinTo} stopOpacity={0.45} />
-            <Stop offset="1" stopColor={config.veinFrom} stopOpacity={0.75} />
+          <SvgGradient id={`vein-${variant}`} x1="0" y1="0" x2="100" y2="216" gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={config.veinFrom} stopOpacity={0.85} />
+            <Stop offset="0.5" stopColor={config.veinTo} stopOpacity={0.4} />
+            <Stop offset="1" stopColor={config.veinFrom} stopOpacity={0.7} />
           </SvgGradient>
         </Defs>
 
-        {/* Primary vein — the long diagonal fracture. */}
+        {/* Clouding — broad, very soft tonal shifts. Kept low-contrast so the
+            boundaries never resolve into readable shapes. */}
         <Path
-          d="M-8 22 C 14 34, 26 18, 42 40 S 66 74, 78 66 S 100 88, 112 78"
+          d="M-10 -10 C 24 10, 8 46, 34 62 C 58 76, 86 44, 118 60 L 118 -10 Z"
+          fill={config.cloud}
+          fillOpacity={config.cloudOpacity * 0.7 * intensity}
+        />
+        <Path
+          d="M-10 226 C 20 202, 44 214, 66 188 C 86 164, 102 180, 118 162 L 118 226 Z"
+          fill={config.cloud}
+          fillOpacity={config.cloudOpacity * 0.55 * intensity}
+        />
+        <Path
+          d="M-10 96 C 18 112, 34 90, 56 110 C 76 128, 94 108, 118 124 L 118 158 C 90 142, 68 162, 46 144 C 26 128, 8 142, -10 130 Z"
+          fill={config.cloud}
+          fillOpacity={config.cloudOpacity * 0.3 * intensity}
+        />
+
+        {/* Primary vein. Long consistent direction with a fine, high-frequency
+            meander around it — that drift is what reads as stone. Wide swings
+            read as a wave; hard corners read as a chart line. */}
+        <Path
+          d="M-8 18 C 6 26, 4 34, 16 44 C 28 54, 24 62, 34 72 C 44 82, 40 92, 52 102
+             C 64 112, 58 122, 68 132 C 78 142, 74 152, 86 162 C 96 170, 94 180, 108 190"
           stroke={`url(#vein-${variant})`}
           strokeWidth={config.majorWidth}
           strokeOpacity={config.majorOpacity * intensity}
           fill="none"
           strokeLinecap="round"
         />
-        {/* Secondary vein — crosses the first at a shallower angle. */}
+        {/* Branch peeling away from the primary at a shallower angle. */}
         <Path
-          d="M-6 108 C 18 96, 30 122, 50 112 S 82 128, 108 116"
+          d="M34 72 C 46 68, 52 74, 62 68 C 72 62, 80 68, 92 62 C 100 58, 104 62, 110 58"
           stroke={`url(#vein-${variant})`}
-          strokeWidth={config.majorWidth * 0.72}
-          strokeOpacity={config.majorOpacity * 0.8 * intensity}
+          strokeWidth={config.majorWidth * 0.5}
+          strokeOpacity={config.majorOpacity * 0.55 * intensity}
           fill="none"
           strokeLinecap="round"
         />
-        {/* Capillary threads — the fine detail that sells the stone. */}
+        {/* Secondary vein — lower, shallower, crossing the frame. */}
         <Path
-          d="M8 40 C 20 52, 24 46, 34 62 S 48 82, 58 78"
+          d="M-8 158 C 10 152, 18 160, 32 154 C 46 148, 54 158, 68 152
+             C 82 146, 92 156, 108 150"
+          stroke={`url(#vein-${variant})`}
+          strokeWidth={config.majorWidth * 0.62}
+          strokeOpacity={config.majorOpacity * 0.6 * intensity}
+          fill="none"
+          strokeLinecap="round"
+        />
+
+        {/* Capillary threads — hairlines drifting near their parent vein. */}
+        <Path
+          d="M2 36 C 12 44, 10 52, 20 60 C 30 68, 28 76, 38 84"
           stroke={config.veinTo}
           strokeWidth={config.minorWidth}
           strokeOpacity={config.minorOpacity * intensity}
           fill="none"
         />
         <Path
-          d="M62 12 C 70 28, 84 24, 92 42"
-          stroke={config.veinTo}
-          strokeWidth={config.minorWidth}
-          strokeOpacity={config.minorOpacity * 0.9 * intensity}
-          fill="none"
-        />
-        <Path
-          d="M14 132 C 30 126, 38 142, 56 138 S 84 146, 96 140"
+          d="M62 8 C 70 18, 68 26, 78 36 C 86 44, 84 52, 92 60"
           stroke={config.veinTo}
           strokeWidth={config.minorWidth}
           strokeOpacity={config.minorOpacity * 0.8 * intensity}
           fill="none"
         />
-        {/* Soft clouding — broad low-opacity washes that break up the gradient. */}
         <Path
-          d="M-10 0 C 30 18, 20 54, 56 62 S 96 40, 118 58 L 118 -10 L -10 -10 Z"
-          fill={config.cloud}
-          fillOpacity={config.cloudOpacity * intensity}
+          d="M8 190 C 22 184, 30 192, 44 186 C 58 180, 68 188, 84 182"
+          stroke={config.veinTo}
+          strokeWidth={config.minorWidth}
+          strokeOpacity={config.minorOpacity * 0.65 * intensity}
+          fill="none"
         />
         <Path
-          d="M-10 170 C 24 150, 46 166, 72 146 S 104 150, 118 132 L 118 172 L -10 172 Z"
-          fill={config.cloud}
-          fillOpacity={config.cloudOpacity * 0.75 * intensity}
+          d="M56 116 C 62 124, 60 130, 68 138"
+          stroke={config.veinTo}
+          strokeWidth={config.minorWidth * 0.8}
+          strokeOpacity={config.minorOpacity * 0.55 * intensity}
+          fill="none"
+        />
+        <Path
+          d="M18 84 C 22 94, 18 100, 24 110"
+          stroke={config.veinTo}
+          strokeWidth={config.minorWidth * 0.8}
+          strokeOpacity={config.minorOpacity * 0.5 * intensity}
+          fill="none"
         />
       </Svg>
 

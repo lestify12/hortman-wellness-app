@@ -96,6 +96,8 @@ export function Button({
             <Text
               variant="button"
               color={scheme.content}
+              // The control has a fixed height, so a label must never wrap.
+              numberOfLines={1}
               style={size === 'sm' ? styles.labelSm : undefined}
             >
               {label}

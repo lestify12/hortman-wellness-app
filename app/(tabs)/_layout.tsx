@@ -4,16 +4,38 @@ import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/providers/AuthProvider';
-import { alpha, colors, fontFamily, radius, scale, spacing } from '@/theme';
+import { colors, fontFamily, layout, radius, scale, spacing } from '@/theme';
 
 type TabIconName = keyof typeof Feather.glyphMap;
+
+interface TabDef {
+  name: string;
+  title: string;
+  icon: TabIconName;
+}
+
+/**
+ * The rail uses shorter words than the screens' own titles ("Appointments",
+ * "Treatments") so five labels fit without truncation on compact handsets.
+ */
+const TABS: TabDef[] = [
+  { name: 'index', title: 'Home', icon: 'home' },
+  { name: 'journey', title: 'Journey', icon: 'trending-up' },
+  { name: 'appointments', title: 'Visits', icon: 'calendar' },
+  { name: 'treatments', title: 'Rituals', icon: 'feather' },
+  { name: 'profile', title: 'Profile', icon: 'user' },
+];
 
 /**
  * Authenticated tab shell.
  *
  * The bar is a floating ivory rail with a hairline rule; the active tab is
- * marked by a gold pip above the label rather than a filled icon, which keeps
+ * marked by a gold pip above the icon rather than a filled glyph, which keeps
  * the thin-line icon language intact.
+ *
+ * The pip lives inside the fixed-size icon slot rather than above it:
+ * react-navigation sizes that slot itself and renders two cross-fading copies
+ * of it, so anything drawn outside its bounds escapes the bar.
  */
 export default function TabsLayout() {
   const { status } = useAuth();
@@ -34,64 +56,36 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.canvas },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ focused, color }) => <TabIcon name="home" focused={focused} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="journey"
-        options={{
-          title: 'Journey',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon name="trending-up" focused={focused} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="appointments"
-        options={{
-          title: 'Appointments',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon name="calendar" focused={focused} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="treatments"
-        options={{
-          title: 'Treatments',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon name="feather" focused={focused} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ focused, color }) => <TabIcon name="user" focused={focused} color={color} />,
-        }}
-      />
+      {TABS.map((tab) => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            title: tab.title,
+            tabBarAccessibilityLabel: tab.title,
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon icon={tab.icon} focused={focused} color={color} />
+            ),
+          }}
+        />
+      ))}
     </Tabs>
   );
 }
 
 function TabIcon({
-  name,
+  icon,
   focused,
   color,
 }: {
-  name: TabIconName;
+  icon: TabIconName;
   focused: boolean;
   color: string;
 }) {
   return (
     <View style={styles.iconWrap}>
-      <View style={[styles.pip, focused && styles.pipActive]} />
-      <Feather name={name} size={21} color={color} />
+      {focused ? <View style={styles.pip} /> : null}
+      <Feather name={icon} size={20} color={color} />
     </View>
   );
 }
@@ -102,9 +96,9 @@ const styles = StyleSheet.create({
     left: spacing.base,
     right: spacing.base,
     bottom: Platform.select({ ios: spacing.xl, default: spacing.base }),
-    height: 72,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
+    height: layout.tabBarHeight,
+    paddingTop: 0,
+    paddingBottom: 0,
     borderRadius: radius.xxl,
     backgroundColor: colors.surface,
     borderTopWidth: 0,
@@ -117,25 +111,32 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   item: {
-    paddingTop: spacing.xs,
+    height: layout.tabBarHeight,
+    paddingHorizontal: spacing.xxs,
+  },
+  iconWrap: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    // Icon sits low in the slot so the pip has room at the top without
+    // spilling past the slot's bounds.
+    justifyContent: 'flex-end',
+  },
+  pip: {
+    position: 'absolute',
+    top: 0,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.accent,
   },
   label: {
     fontFamily: fontFamily.sansMedium,
     fontSize: 10,
-    letterSpacing: 0.6,
-    marginTop: spacing.xs,
-  },
-  iconWrap: {
-    alignItems: 'center',
-  },
-  pip: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginBottom: spacing.sm - 3,
-    backgroundColor: alpha(colors.textPrimary, 0),
-  },
-  pipActive: {
-    backgroundColor: colors.accent,
+    lineHeight: 13,
+    letterSpacing: 0.2,
+    marginTop: spacing.xs - 1,
+    marginBottom: 0,
+    includeFontPadding: false,
   },
 });
