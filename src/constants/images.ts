@@ -6,9 +6,18 @@
  * here means screens import a name instead of walking `../../../assets`, and a
  * renamed or deleted file breaks in one place rather than across the app.
  *
+ * IMPORTANT: only register images the app actually draws. A `require` here runs
+ * as soon as any screen imports this module, so Metro bundles and ships the
+ * file whether or not anything renders it. Registering the unused marble
+ * textures and the app icons once put ~7 MB of dead weight into the bundle,
+ * which is what made the login screen slow to appear.
+ *
+ * The app icons are NOT registered: `app.json` references them by path, which
+ * does not go through Metro.
+ *
  * Adding an image:
  *   1. Drop the file in `assets/images/` (see `assets/README.md` for sizes).
- *   2. Add a `require` line below.
+ *   2. Add a `require` line below — only if something renders it.
  *   3. Use it: `<Image source={images.brand.monogram} />`
  *
  * Remote images (once a backend serves them) do not belong here — pass those
@@ -19,37 +28,21 @@
 export const images = {
   brand: {
     /**
-     * Gold V monogram on transparency, cut out of `assets/brand/
-     * velora_text_full.png`. The supplied render sits on black, which would
-     * show as a dark box over the ivory marble.
+     * Gold V monogram on transparency, cut out of
+     * `assets/brand/velora_text_full.png` and pre-scaled to roughly the size it
+     * renders at. See `assets/README.md` for how it was cut.
      */
     monogram: require('../../assets/images/velora-monogram.png'),
-    /** 1024×1024 marble ground + monogram. Also referenced by app.json. */
-    icon: require('../../assets/images/icon.png'),
-    /** 1024×1024 transparent monogram for the Android adaptive foreground. */
-    adaptiveIcon: require('../../assets/images/adaptive-icon.png'),
-    /** 1024×1024 transparent monogram shown on the native splash. */
-    splashIcon: require('../../assets/images/splash-icon.png'),
   },
 
   backgrounds: {
     /**
      * Full-bleed auth background: ivory marble above a gold curve, emerald
-     * marble below. Authored at 853×1844 (≈0.463), which matches a modern
-     * handset closely enough that `cover` barely crops.
+     * marble below. JPEG, because it is photographic and full-bleed — the PNG
+     * source in `assets/brand/` is 1.9 MB against 139 KB here, for no visible
+     * difference at display size.
      */
-    login: require('../../assets/images/login_background.png'),
-  },
-
-  /**
-     * Photographic marble grounds. `components/brand/Marble.tsx` still draws
-     * its stone procedurally; these are the supplied textures for surfaces
-     * that want the real thing.
-     */
-  marble: {
-    emerald: require('../../assets/images/emerald_marble.png'),
-    ivory: require('../../assets/images/ivory_marble.png'),
-    champagne: require('../../assets/images/champagne_marble.png'),
+    login: require('../../assets/images/login-background.jpg'),
   },
 } as const;
 

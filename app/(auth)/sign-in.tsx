@@ -1,14 +1,7 @@
 import { Link, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthBackdrop } from '@/components/brand/AuthBackdrop';
@@ -32,6 +25,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * half, the form on the emerald half below the gold curve. The split is driven
  * by flex proportions rather than absolute offsets, so the content tracks the
  * curve as the artwork is cropped on taller or shorter handsets.
+ *
+ * `AuthBackdrop` owns the scrolling and the artwork together, which is what
+ * keeps the form on emerald when the keyboard opens — see the note there.
  */
 export default function SignInRoute() {
   const router = useRouter();
@@ -75,141 +71,123 @@ export default function SignInRoute() {
     <AuthBackdrop>
       <StatusBar style="dark" />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
-      >
-        <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
-          <ScrollView
-            contentContainerStyle={styles.scroll}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
-            <View style={styles.column}>
-              {/* Ivory half — brand */}
-              <View style={styles.brand}>
-                <VeloraLogoLockup size={scaleWidth(70)} tone="emerald" showTagline />
-              </View>
+      <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
+        <View style={styles.column}>
+          {/* Ivory half — brand */}
+          <View style={styles.brand}>
+            <VeloraLogoLockup size={scaleWidth(70)} tone="emerald" showTagline />
+          </View>
 
-              {/* Emerald half — form */}
-              <View style={styles.form}>
-                <Text variant="h1" tone="onDark" align="center">
-                  Welcome back
+          {/* Emerald half — form */}
+          <View style={styles.form}>
+            <Text variant="h1" tone="onDark" align="center">
+              Welcome back
+            </Text>
+            <Text variant="body" tone="onDarkMuted" align="center" style={styles.subtitle}>
+              Sign in to continue your journey
+            </Text>
+
+            <TextField
+              label="Email address"
+              placeholder="Email address"
+              showLabel={false}
+              variant="boxed"
+              onDark
+              icon="mail"
+              value={email}
+              onChangeText={(v) => {
+                setEmail(v);
+                if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+              }}
+              error={errors.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              textContentType="emailAddress"
+              returnKeyType="next"
+            />
+
+            <TextField
+              label="Password"
+              placeholder="Password"
+              showLabel={false}
+              variant="boxed"
+              onDark
+              icon="lock"
+              secure
+              value={password}
+              onChangeText={(v) => {
+                setPassword(v);
+                if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
+              }}
+              error={errors.password}
+              autoCapitalize="none"
+              autoComplete="current-password"
+              textContentType="password"
+              returnKeyType="go"
+              onSubmitEditing={onSubmit}
+            />
+
+            <Link href="/(auth)/forgot-password" asChild>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Forgot your password"
+                hitSlop={8}
+                style={({ pressed }) => [styles.forgot, pressed && styles.pressed]}
+              >
+                <Text variant="caption" tone="gold">
+                  Forgot password?
                 </Text>
-                <Text
-                  variant="body"
-                  tone="onDarkMuted"
-                  align="center"
-                  style={styles.subtitle}
+              </Pressable>
+            </Link>
+
+            {formError ? (
+              <Text variant="bodySm" tone="onDark" align="center" style={styles.formError}>
+                {formError}
+              </Text>
+            ) : null}
+
+            <Button
+              label="Sign in"
+              onPress={onSubmit}
+              loading={submitting}
+              variant="marble"
+              size="lg"
+              style={styles.submit}
+            />
+
+            <Divider label="OR" dark style={styles.divider} />
+
+            <SocialButton
+              provider="apple"
+              onPress={() => setFormError('Apple sign-in is not connected yet.')}
+              style={styles.social}
+            />
+            <SocialButton
+              provider="google"
+              onPress={() => setFormError('Google sign-in is not connected yet.')}
+            />
+
+            <View style={styles.footer}>
+              <Text variant="bodySm" tone="onDarkMuted">
+                Don&apos;t have an account?{' '}
+              </Text>
+              <Link href="/(auth)/sign-up" asChild>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Create an account"
+                  hitSlop={8}
+                  style={({ pressed }) => pressed && styles.pressed}
                 >
-                  Sign in to continue your journey
-                </Text>
-
-                <TextField
-                  label="Email address"
-                  placeholder="Email address"
-                  showLabel={false}
-                  variant="boxed"
-                  onDark
-                  icon="mail"
-                  value={email}
-                  onChangeText={(v) => {
-                    setEmail(v);
-                    if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
-                  }}
-                  error={errors.email}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  textContentType="emailAddress"
-                  returnKeyType="next"
-                />
-
-                <TextField
-                  label="Password"
-                  placeholder="Password"
-                  showLabel={false}
-                  variant="boxed"
-                  onDark
-                  icon="lock"
-                  secure
-                  value={password}
-                  onChangeText={(v) => {
-                    setPassword(v);
-                    if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
-                  }}
-                  error={errors.password}
-                  autoCapitalize="none"
-                  autoComplete="current-password"
-                  textContentType="password"
-                  returnKeyType="go"
-                  onSubmitEditing={onSubmit}
-                />
-
-                <Link href="/(auth)/forgot-password" asChild>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Forgot your password"
-                    hitSlop={8}
-                    style={({ pressed }) => [styles.forgot, pressed && styles.pressed]}
-                  >
-                    <Text variant="caption" tone="gold">
-                      Forgot password?
-                    </Text>
-                  </Pressable>
-                </Link>
-
-                {formError ? (
-                  <Text variant="bodySm" tone="onDark" align="center" style={styles.formError}>
-                    {formError}
+                  <Text variant="bodySm" tone="gold">
+                    Create Account
                   </Text>
-                ) : null}
-
-                <Button
-                  label="Sign in"
-                  onPress={onSubmit}
-                  loading={submitting}
-                  variant="marble"
-                  size="lg"
-                  style={styles.submit}
-                />
-
-                <Divider label="OR" dark style={styles.divider} />
-
-                <SocialButton
-                  provider="apple"
-                  onPress={() => setFormError('Apple sign-in is not connected yet.')}
-                  style={styles.social}
-                />
-                <SocialButton
-                  provider="google"
-                  onPress={() => setFormError('Google sign-in is not connected yet.')}
-                />
-
-                <View style={styles.footer}>
-                  <Text variant="bodySm" tone="onDarkMuted">
-                    Don&apos;t have an account?{' '}
-                  </Text>
-                  <Link href="/(auth)/sign-up" asChild>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Create an account"
-                      hitSlop={8}
-                      style={({ pressed }) => pressed && styles.pressed}
-                    >
-                      <Text variant="bodySm" tone="gold">
-                        Create Account
-                      </Text>
-                    </Pressable>
-                  </Link>
-                </View>
-              </View>
+                </Pressable>
+              </Link>
             </View>
-          </ScrollView>
-        </SafeAreaView>
-      </KeyboardAvoidingView>
+          </View>
+        </View>
+      </SafeAreaView>
     </AuthBackdrop>
   );
 }
@@ -217,9 +195,6 @@ export default function SignInRoute() {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-  },
-  scroll: {
-    flexGrow: 1,
   },
   column: {
     flex: 1,

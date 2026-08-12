@@ -10,13 +10,20 @@ assets/
 ```
 
 Everything the app renders lives in `assets/images/` and is reached through
-`src/constants/images.ts`. `assets/brand/` is a reference shelf — nothing there
-is bundled directly; derived cut-outs are exported into `assets/images/`.
+`src/constants/images.ts`. `assets/brand/` is a reference shelf — full-resolution
+sources and originals. Nothing there is bundled; derived, display-sized versions
+are exported into `assets/images/`.
+
+**Only register an image in `src/constants/images.ts` once something draws it.**
+A `require` there runs as soon as any screen imports the module, so Metro ships
+the file whether or not it is rendered. Registering the marble textures and the
+app icons "for later" once put ~7 MB of dead weight in the bundle and was what
+made the login screen slow to appear.
 
 ## What is already here
 
-`assets/images/` holds the app icons plus the supplied marble artwork and the
-monogram cut-out used by the auth screens.
+`assets/images/` holds the app icons plus the display-sized artwork the auth
+screens draw.
 
 | File | Size | Used by |
 | --- | --- | --- |
@@ -24,16 +31,18 @@ monogram cut-out used by the auth screens.
 | `adaptive-icon.png` | 1024×1024 | Android adaptive foreground — transparent, mark inside the safe zone |
 | `splash-icon.png` | 1024×1024 | Native splash — transparent, over `#0D3B34` |
 | `favicon.png` | 96×96 | Web tab icon — rings dropped, they disappear at this size |
-| `login_background.png` | 853×1844 | Auth backdrop: ivory marble, gold curve, emerald marble |
-| `velora-monogram.png` | 629×592 | Gold V on transparency, used in the auth lockup |
-| `emerald_marble.png` | 853×1844 | Emerald marble texture |
-| `ivory_marble.png` | 853×1844 | Ivory marble texture |
-| `champagne_marble.png` | 853×1844 | Champagne marble texture |
+| `login-background.jpg` | 853×1844, 139 KB | Auth backdrop: ivory marble, gold curve, emerald marble |
+| `velora-monogram.png` | 340×320, 82 KB | Gold V on transparency, used in the auth lockup |
 
-The first four are wired up in `app.json`; the rest are reached through
-`src/constants/images.ts`. Replace any of them in place, keeping the same
-filename and roughly the same dimensions, and the app picks the new one up on
-next start — no config change needed.
+The full-resolution originals — `login_background.png` and the three marble
+textures — sit in `assets/brand/`. They are sources, not assets: the background
+alone is 1.9 MB against 139 KB as a JPEG, for no visible difference at display
+size.
+
+The four icons are wired up in `app.json` by path, which does not go through
+Metro — that is why they are not in the registry. Replace any file in place,
+keeping the same name and roughly the same dimensions, and the app picks it up
+on next start.
 
 ### The monogram cut-out
 
@@ -41,15 +50,23 @@ next start — no config change needed.
 supplied render sits on black, so pasting it straight onto the ivory marble
 would show a dark box.
 
-Two things that pass unnoticed against black and do not survive the move to a
+Four things that pass unnoticed against black but do not survive the move to a
 light ground, in case the mark is ever re-cut:
 
 - The matte comes from luminance — the artwork is lit gold on near-black — with
   a soft ramp that clips the render's warm halo. Left in, that glow reads as a
   smudge on ivory.
-- The anti-aliased edges carry chroma bleed, yellow on one side and red on the
-  other. Clamping hue into the gold band removes it without touching the body
-  of the mark, which is already in range.
+- **Colour is regenerated, not kept.** The output is a gold ramp indexed by the
+  source's luminance, so the mark keeps its modelling but none of the render's
+  chroma. Preserving the original colour — even with hue clamped into the gold
+  band — leaves saturated yellow speckles along the bevel that are invisible on
+  black and obvious on ivory.
+- The matte is blurred and then re-tightened on its own, separately from the
+  colour. Without that the silhouette follows every bump in the render's bevel
+  and the edges read as scalloped.
+- It is exported near the size it renders at (~70 pt), not at source
+  resolution. Handing the platform a 600 px image to scale down to 210 px
+  aliases the edges, particularly on Android.
 
 The wordmark is *not* sliced from the same render. It is typeset (see
 `VeloraLogoLockup.tsx`) so it stays crisp at any size and recolours per surface;
@@ -104,10 +121,9 @@ Images that come from a backend do not belong in the registry — pass those as
   `name@2x.png` and `name@3x.png` next to `name.png`; reference only `name.png`.
 - **Do not put secrets here.** Everything in `assets/` is bundled into the app
   and readable by anyone who downloads it.
-- **Weight.** The marble textures are 1.5–2.3 MB each. That is fine for the one
-  or two on screen at a time, but they are large enough that adding many more at
-  this size will be felt on first load. Re-export at the size actually used
-  rather than shipping full-resolution stock.
+- **Weight.** Export at the size actually rendered rather than shipping
+  full-resolution stock. The supplied marble originals are 1.5–2.3 MB each; the
+  background they became is 139 KB and looks identical on a handset.
 
 ## Fonts
 
