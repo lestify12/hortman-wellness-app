@@ -180,7 +180,7 @@ function Journey({ slide }: { slide: OnboardingSlide }) {
 
       {(slide.steps ?? []).map((s, i) => (
         <View key={s.index} style={[styles.journeyStep, STEP_POS[i]]}>
-          <Text variant="h4" color={scale.gold400}>
+          <Text variant="h3" color={scale.gold400}>
             {s.index}
           </Text>
           <Text variant="label" tone="onDark" style={styles.stepTitle}>
@@ -206,12 +206,16 @@ function Journey({ slide }: { slide: OnboardingSlide }) {
  * Nodes sit at roughly (48%, 24%), (48%, 57%) and (83%, 80%) of the artwork.
  */
 const STEP_POS = [
-  { top: '-2%', left: '0%', width: '60%' },
-  // Narrower: the curve bulges furthest left at this height, and text running
-  // over the glow is the one thing that costs more than the stagger buys.
-  { top: '31%', left: '7%', width: '46%' },
-  { top: '65%', left: '2%', width: '62%' },
+  { top: '-4%', left: '0%', width: '50%' },
+  // Indented, following the curve — but only as far as the glow allows. The
+  // artwork swings widest left at this height, and text over the glow is the
+  // one thing that costs more than the stagger buys.
+  { top: '30%', left: '14%', width: '46%' },
+  { top: '63%', left: '6%', width: '50%' },
 ] as const;
+
+/** How far the curve sits past the block's right edge, clearing the columns. */
+const PATH_BLEED = 48;
 
 const DISC = scaleWidth(44);
 
@@ -270,7 +274,7 @@ const styles = StyleSheet.create({
   },
   journeyPath: {
     position: 'absolute',
-    right: -spacing.xxl,
+    right: -PATH_BLEED,
     // Bleeds a little above and below the block so the curve reads at a size
     // worth looking at; the block itself is only ~190pt tall on a handset.
     top: '-9%',
@@ -278,7 +282,7 @@ const styles = StyleSheet.create({
     // Both axes explicit. Absolute insets are not enough: an Image with no
     // definite height falls back to the artwork's own 620 px and overflows,
     // leaving a single node filling the corner.
-    width: '70%',
+    width: '66%',
   },
   journeyStep: {
     position: 'absolute',
